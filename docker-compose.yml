@@ -1,0 +1,46 @@
+version: '3.8'
+
+networks:
+  go: {}
+
+volumes:
+  goroot: {}
+  gocache: {}
+  pgdata: {}
+
+services:
+  go:
+    image: golang:1.19-buster
+    volumes:
+      - goroot:/go
+      - gocache:/.cache/go-build
+      - .:/project
+    ports:
+      - 8222:8000
+    working_dir: /project
+    environment:
+      - TZ=${TIMEZONE:-Asia/Jakarta}
+      - PORT=8000
+    command:
+      - tail
+      - -f
+      - /etc/hosts
+    networks:
+      - go
+
+  postgres:
+    image: postgres:9.5
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - TZ=${TIMEZONE:-Asia/Jakarta}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASS:-postgres}
+      - POSTGRES_DB=${DB_NAME:-postgres}
+    ports:
+      - ${POSTGRES_PORT:-55437}:5432
+    networks:
+      go:
+        aliases:
+          - ${DB_HOST:-postgres}
